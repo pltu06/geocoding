@@ -3,7 +3,7 @@
 
 # This function requires tidyverse, censusxy
 
-svi_adi_function <- function(data = x){
+svi_adi_function <- function(data = x, adi_year = 2021){
   
   library(censusxy)
   library(tidyverse)
@@ -15,7 +15,7 @@ svi_adi_function <- function(data = x){
     select(svi = THEMES, GEOID)%>%
     mutate(FIPS = as.numeric(GEOID))
   
-  adi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_il_2021.csv"
+  adi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_il_", adi_year, ".csv")
   
   adi_data <- read_csv(url(adi_url))%>%
     select(-GISJOIN)
@@ -54,4 +54,4 @@ x <- tibble(street = c("1501 Washington Ave", "875 N Michigan Ave",
             state = c("IL", "IL", "IL", "IL", "IL"),
             zip = c(62914, 60611, 60612, 61615, 60302))
 
-svi_adi_function()
+svi_adi_function(adi_year = 1920)
