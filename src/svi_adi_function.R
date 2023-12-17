@@ -31,8 +31,12 @@ svi_adi_function <- function(data = x, adi_year = 2021){
   
   adi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_il_", adi_year, ".csv")
   
+  missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
+  
   adi_data <- read_csv(url(adi_url))%>%
-    select(-GISJOIN)
+    select(-GISJOIN)%>%
+    mutate(across(.cols = starts_with("ADI"), 
+                  .fns = ~if_else(.x%in%missing_data, NA, .x)))
   
   census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",
@@ -57,8 +61,8 @@ svi_adi_function <- function(data = x, adi_year = 2021){
   data$lat <- svi_tract$cxy_lat
   data$geoid_tract <- svi_tract$geoid_tract
   data$geoid_block <- svi_tract$geoid_block
-  data$adi_national <- svi_tract$ADI_NATRANK
-  data$adi_state <- svi_tract$ADI_STATERNK
+  data$adi_national <- as.numeric(svi_tract$ADI_NATRANK)
+  data$adi_state <- as.numeric(svi_tract$ADI_STATERNK)
   data$tract <- svi_tract$tract.y
   
   return(data)
