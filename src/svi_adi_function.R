@@ -20,7 +20,7 @@ svi_adi_function <- function(data = x, adi_year = 2021){
   adi_data <- read_csv(url(adi_url))%>%
     select(-GISJOIN)
   
-  census_tracts <- cxy_geocode(x, street = "street", city = "city", 
+  census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",
                                return = "geographies", 
                                vintage = "Current_Current", 
