@@ -3,17 +3,17 @@
 
 # This function requires tidyverse, censusxy, readr
 
-svi_adi_function <- function(data = x, adi_year = 2021){
+svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE){
   
   library(censusxy)
   library(tidyverse)
   library(readr)
-  
-  svi_url_bg <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_bg_2020.csv"
-  
+
+  if (download) {svi_url_bg <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_bg_2020.csv"
+    
   svi_data_bg <- read_csv(url(svi_url_bg))%>%
-    select(svi_block = THEMES, GEOID)%>%
-    mutate(FIPS = as.numeric(GEOID))
+      select(svi_block = THEMES, GEOID)%>%
+      mutate(FIPS = as.numeric(GEOID))
   
   svi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_2020.csv"
   
@@ -37,6 +37,32 @@ svi_adi_function <- function(data = x, adi_year = 2021){
     select(-GISJOIN)%>%
     mutate(across(.cols = starts_with("ADI"), 
                   .fns = ~if_else(.x%in%missing_data, NA, .x)))
+  } else {
+    svi_data_bg <- read_csv("Data/svi_il_bg_2020.csv")%>%
+    select(svi_block = THEMES, GEOID)%>%
+    mutate(FIPS = as.numeric(GEOID))
+    
+    svi_data <- read_csv("Data/svi_il_2020.csv")%>%
+      select(LOCATION, svi_tract = RPL_THEMES, FIPS)%>%
+      separate(
+        LOCATION, 
+        into = c("census_tract", "county", "state"), 
+        sep = ",", 
+        remove = FALSE
+      ) %>%
+      mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
+             county_name = sub("\\s+", "", county))%>%
+      select(-county,-state)
+    
+    missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
+    
+    adi_data <- read_csv(paste0("Data/adi_il_", adi_year, ".csv"))%>%
+      select(-GISJOIN)%>%
+      mutate(across(.cols = starts_with("ADI"), 
+                    .fns = ~if_else(.x%in%missing_data, NA, .x)))
+  }
+  
+  
   
   census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",

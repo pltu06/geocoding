@@ -1,26 +1,36 @@
-# This function inputs addresses and returns Child Opportunity Index values 
-# based on the census tract
-
+# This function inputs addresses and returns Child Opportunity Index and Social Deprivation Index 
+# values based on the census tract
 # This function uses tidyverse, readr, censusxy
 
-coi_function <- function(data = x){
+coi_sdi_function <- function(data = x, download = TRUE){
   
   library(censusxy)
   library(tidyverse)
   library(readr)
   
-  coi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_il_2015.csv"
-  
-  coi_data <- read_csv(url(coi_url))%>%
-                         filter(stateusps == "IL", year == 2015)%>%
-                         select(geoid, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
-                         mutate(geoid = as.numeric(geoid))
-  
-  sdi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/sdi_il_2019.csv"
-  
-  sdi_data <- read_csv(url(sdi_url))%>%
-    select(CENSUSTRACT_FIPS, sdi)%>%
-    mutate(geoid = as.numeric(CENSUSTRACT_FIPS))
+  if (download) {
+    coi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_il_2015.csv"
+    
+    coi_data <- read_csv(url(coi_url))%>%
+      filter(stateusps == "IL", year == 2015)%>%
+      select(geoid, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
+      mutate(geoid = as.numeric(geoid))
+    
+    sdi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/sdi_il_2019.csv"
+    
+    sdi_data <- read_csv(url(sdi_url))%>%
+      select(CENSUSTRACT_FIPS, sdi)%>%
+      mutate(geoid = as.numeric(CENSUSTRACT_FIPS))
+  } else {
+    coi_data <- read_csv("Data/coi_il_2015.csv")%>%
+      filter(stateusps == "IL", year == 2015)%>%
+      select(geoid, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
+      mutate(geoid = as.numeric(geoid))
+    
+    sdi_data <- read_csv("Data/sdi_il_2019.csv")%>%
+      select(CENSUSTRACT_FIPS, sdi)%>%
+      mutate(geoid = as.numeric(CENSUSTRACT_FIPS))
+  }
   
   census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",
