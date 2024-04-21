@@ -3,7 +3,7 @@
 
 # This function requires tidyverse, censusxy, readr
 
-svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE){
+svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE, coi_year = 2021){
   
   library(censusxy)
   library(tidyverse)
@@ -37,6 +37,14 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE){
     select(-GISJOIN)%>%
     mutate(across(.cols = starts_with("ADI"), 
                   .fns = ~if_else(.x%in%missing_data, NA, .x)))
+  
+  coi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_2024.csv"
+  
+  coi_data <- read_csv(url(coi_url))%>%
+    filter(year == coi_year)%>%
+    select(geoid20, z_COI_nat)%>%
+    mutate(geoid = as.numeric(geoid20))
+  
   } else {
     svi_data_bg <- read_csv("Data/svi_il_bg_2020.csv")%>%
     select(svi_block = THEMES, GEOID)%>%
@@ -60,9 +68,12 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE){
       select(-GISJOIN)%>%
       mutate(across(.cols = starts_with("ADI"), 
                     .fns = ~if_else(.x%in%missing_data, NA, .x)))
+    
+    coi_data <- read_csv(file = "Data/coi_2024.csv")%>%
+      filter(year == coi_year)%>%
+      select(geoid20, z_COI_nat)%>%
+      mutate(geoid = as.numeric(geoid20))
   }
-  
-  
   
   census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",
@@ -79,10 +90,12 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE){
   svi_tract <- left_join(census_tracts, svi_data,
                          by = c("geoid_tract" = "FIPS"))%>%
     left_join(., svi_data_bg, by = c("geoid_block" = "FIPS"))%>%
-    left_join(., adi_data, by = c("geoid_block" = "FIPS"))
+    left_join(., adi_data, by = c("geoid_block" = "FIPS"))%>%
+    left_join(., coi_data, by = c("geoid_tract" = "geoid"))
   
   data$svi_tract <- svi_tract$svi_tract
   data$svi_block <- svi_tract$svi_block
+  data$coi <- svi_tract$z_COI_nat
   data$lon <- svi_tract$cxy_lon
   data$lat <- svi_tract$cxy_lat
   data$geoid_tract <- svi_tract$geoid_tract

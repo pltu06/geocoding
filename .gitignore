@@ -53,3 +53,6 @@ rsconnect/
 
 # DS Store
 *.DS_Store
+
+# COI Data
+Data/coi_data.csv

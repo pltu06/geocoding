@@ -21,6 +21,7 @@ coi_sdi_function <- function(data = x, download = TRUE){
     sdi_data <- read_csv(url(sdi_url))%>%
       select(CENSUSTRACT_FIPS, sdi)%>%
       mutate(geoid = as.numeric(CENSUSTRACT_FIPS))
+    
   } else {
     coi_data <- read_csv("Data/coi_il_2015.csv")%>%
       filter(stateusps == "IL", year == 2015)%>%
