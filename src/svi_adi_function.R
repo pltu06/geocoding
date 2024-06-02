@@ -1,13 +1,36 @@
-# This function inputs addresses and outputs Social Vulnerability Index and Area 
-# Deprivation Index values for each address based on their census block group
+# This function inputs addresses and outputs Social Vulnerability Index, Child Opportunity Index, 
+# and Area Deprivation Index values for each address based on their census block 
+# group
 
-# This function requires tidyverse, censusxy, readr
+# This function requires tidyverse, censusxy, readr, dplyr, tidyr
 
-svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE, coi_year = 2021){
+svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2021){
   
-  library(censusxy)
-  library(tidyverse)
-  library(readr)
+  stopifnot("You forgot to enter data" = !is.null(data))
+  
+  packages <- c("remotes", "readr", "dplyr", "tidyr")
+  
+  for (i in 1:length(packages)) {
+    req <- require(packages[i], character.only = TRUE)
+    
+    if (req) {
+      library(packages[i], character.only = TRUE)
+    } else {
+      install.packages(packages[i])
+      
+      library(packages[i], character.only = TRUE)
+    }
+  }
+  
+  test <- require("censusxy", character.only = TRUE)
+  
+  if (test) {
+    library(censusxy)
+  } else {
+    install_github("chris-prener/censusxy")
+    
+    library(censusxy)
+  }
 
   if (download) {svi_url_bg <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_bg_2020.csv"
     
@@ -38,11 +61,10 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE, coi_yea
     mutate(across(.cols = starts_with("ADI"), 
                   .fns = ~if_else(.x%in%missing_data, NA, .x)))
   
-  coi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_2024.csv"
+  coi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_", coi_year, ".csv")
   
   coi_data <- read_csv(url(coi_url))%>%
-    filter(year == coi_year)%>%
-    select(geoid20, z_COI_nat)%>%
+    select(geoid20, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
     mutate(geoid = as.numeric(geoid20))
   
   } else {
@@ -69,9 +91,8 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE, coi_yea
       mutate(across(.cols = starts_with("ADI"), 
                     .fns = ~if_else(.x%in%missing_data, NA, .x)))
     
-    coi_data <- read_csv(file = "Data/coi_2024.csv")%>%
-      filter(year == coi_year)%>%
-      select(geoid20, z_COI_nat)%>%
+    coi_data <- read_csv(file = paste0("Data/coi_", coi_year, ".csv"))%>%
+      select(geoid20, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
       mutate(geoid = as.numeric(geoid20))
   }
   
@@ -96,6 +117,9 @@ svi_adi_function <- function(data = x, adi_year = 2021, download = TRUE, coi_yea
   data$svi_tract <- svi_tract$svi_tract
   data$svi_block <- svi_tract$svi_block
   data$coi <- svi_tract$z_COI_nat
+  data$coi_ed <- svi_tract$z_ED_nat
+  data$coi_he <- svi_tract$z_HE_nat
+  data$coi_se <- svi_tract$z_SE_nat
   data$lon <- svi_tract$cxy_lon
   data$lat <- svi_tract$cxy_lat
   data$geoid_tract <- svi_tract$geoid_tract
