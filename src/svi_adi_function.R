@@ -32,13 +32,13 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
     library(censusxy)
   }
 
-  if (download) {svi_url_bg <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_bg_2020.csv"
+  if (download) {svi_url_bg <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_bg_2020.csv"
     
   svi_data_bg <- read_csv(url(svi_url_bg))%>%
       select(svi_block = THEMES, GEOID)%>%
       mutate(FIPS = as.numeric(GEOID))
   
-  svi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_il_2020.csv"
+  svi_url <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data/svi_2022.csv"
   
   svi_data <- read_csv(url(svi_url))%>%
     select(LOCATION, svi_tract = RPL_THEMES, FIPS)%>%
@@ -50,6 +50,7 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
     ) %>%
     mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
            county_name = sub("\\s+", "", county))%>%
+    mutate(FIPS = as.numeric(FIPS))%>%
     select(-county,-state)
   
   adi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_il_", adi_year, ".csv")
@@ -68,11 +69,11 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
     mutate(geoid = as.numeric(geoid20))
   
   } else {
-    svi_data_bg <- read_csv("Data/svi_il_bg_2020.csv")%>%
+    svi_data_bg <- read_csv("Data/svi_bg_2020.csv")%>%
     select(svi_block = THEMES, GEOID)%>%
     mutate(FIPS = as.numeric(GEOID))
     
-    svi_data <- read_csv("Data/svi_il_2020.csv")%>%
+    svi_data <- read_csv("Data/svi_2022.csv")%>%
       select(LOCATION, svi_tract = RPL_THEMES, FIPS)%>%
       separate(
         LOCATION, 
@@ -82,6 +83,7 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
       ) %>%
       mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
              county_name = sub("\\s+", "", county))%>%
+      mutate(FIPS = as.numeric(FIPS))%>%
       select(-county,-state)
     
     missing_data <- c("GQ", "PH-GQ", "QDI", "PH")

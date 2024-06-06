@@ -22,7 +22,7 @@ coi_sdi_function(data = x, download = FALSE)
 
 svi_adi_function(data = x, adi_year = 2020, download = FALSE)
 
-svi_adi_function(data = x, download = FALSE)
+geo_data <- svi_adi_function(data = x, download = FALSE)
 
 geo_merge_function()
 
