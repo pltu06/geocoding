@@ -2,13 +2,13 @@
 # and Area Deprivation Index values for each address based on their census block 
 # group
 
-# This function requires tidyverse, censusxy, readr, dplyr, tidyr
+# This function requires tidyverse, censusxy, readr, dplyr, tidyr, sf, remotes
 
 svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2021){
   
   stopifnot("You forgot to enter data" = !is.null(data))
   
-  packages <- c("remotes", "readr", "dplyr", "tidyr")
+  packages <- c("remotes", "readr", "dplyr", "tidyr", "sf")
   
   for (i in 1:length(packages)) {
     req <- require(packages[i], character.only = TRUE)
