@@ -16,7 +16,7 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
     if (req) {
       library(packages[i], character.only = TRUE)
     } else {
-      install.packages(packages[i])
+      install.packages(packages[i], dependencies = TRUE)
       
       library(packages[i], character.only = TRUE)
     }
