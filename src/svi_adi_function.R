@@ -45,7 +45,7 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
     separate(
       LOCATION, 
       into = c("census_tract", "county", "state"), 
-      sep = ",", 
+      sep = ";", 
       remove = FALSE
     ) %>%
     mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
@@ -78,7 +78,7 @@ svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_
       separate(
         LOCATION, 
         into = c("census_tract", "county", "state"), 
-        sep = ",", 
+        sep = ";", 
         remove = FALSE
       ) %>%
       mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
