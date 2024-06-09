@@ -14,16 +14,16 @@ x <- tibble(street = c("1501 Washington Ave", "875 N Michigan Ave",
 
 
 
-source("src/coi_sdi_function.R")
-source("src/svi_adi_function.R")
+source("src/geo_2020.R")
+source("src/geo_2010.R")
 
 
-coi_sdi_function(data = x, download = FALSE)
+geo_2010(data = x, download = FALSE)
 
-svi_adi_function(data = x, adi_year = 2020, download = FALSE)
+geo_2020(data = x, adi_year = 2020, download = FALSE)
 
-svi_adi_function(data = x, download = FALSE)
+geo_2020(data = x, download = FALSE)
 
 geo_merge_function()
 
-svi_adi_function(data = x, adi_year = 2021, download = FALSE)
+geo_2020(data = x, adi_year = 2021, download = FALSE)
