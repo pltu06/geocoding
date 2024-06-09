@@ -56,3 +56,7 @@ rsconnect/
 
 # COI Data
 Data/coi_data.csv
+
+# GitHub Pages
+/.quarto/
+/_site/
