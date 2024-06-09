@@ -4,7 +4,7 @@
 
 # This function requires tidyverse, censusxy, readr, dplyr, tidyr, sf, remotes
 
-svi_adi_function <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2021){
+geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2021){
   
   stopifnot("You forgot to enter data" = !is.null(data))
   

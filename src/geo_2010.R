@@ -2,7 +2,7 @@
 # values based on the census tract
 # This function uses tidyverse, readr, censusxy
 
-coi_sdi_function <- function(data = x, download = TRUE){
+geo_2010 <- function(data = x, download = TRUE){
   
   library(censusxy)
   library(tidyverse)

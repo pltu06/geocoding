@@ -59,4 +59,5 @@ Data/coi_data.csv
 
 # GitHub Pages
 /.quarto/
-/_site/
+/geo_site_files/
+geo_site.html
