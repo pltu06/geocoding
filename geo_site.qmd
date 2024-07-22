@@ -1,0 +1,90 @@
+---
+title: "How to Use Geocoding Functions"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE,echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyr)
+
+library(tidyselect)
+```
+
+```{r}
+library(DT)
+```
+
+## Introduction
+
+These geocoding functions take in address data and return Area Deprivation Index, Child Opportunity Index, Social Deprivation Index, and Social Vulnerability Index values. There are two geocoding functions: one for 2020 census tract-based indices, `geo_2020()`; and one for 2010 census tract-based indices, `geo_2010()`.
+
+## Dataset Rules
+
+Address data should be inputted with the address separated into 'street', 'city', 'state', and 'zip' columns. Make sure the column names match the names used in this dataset. Addresses should be stripped of apartment numbers if applicable and any NA values in the data set should be removed. Additionally zip codes should be entered as numbers rather than characters.
+
+```{r}
+library(tibble)
+
+x <- tibble(street = c("1501 Washington Ave", "875 N Michigan Ave", 
+                       "1901 W Madison St", "8327 N Galena Rd", "951 Chicago Ave"), 
+            city = c("Cairo", "Chicago", "Chicago", "Peoria", "Oak Park"),
+            state = c("IL", "IL", "IL", "IL", "IL"),
+            zip = c(62914, 60611, 60612, 61615, 60302))
+
+datatable(x)
+```
+
+For this example we took five addresses formatted correctly and inputted them into the function.
+
+## Getting the Function
+
+To get `geo_2020()` and `geo_2010()` in your R environment run this code sourcing from the Github repository [pltu06/geocoding](https://github.com/pltu06/geocoding/blob/main/src/geo_2020.R).
+
+```{r}
+source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2020.R")
+
+source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2010.R")
+```
+
+## Running the Function
+
+For both of the functions the `download` argument determines whether or not you need to download the index data. If you do not have the index data on your computer you should set `download = TRUE`. `geo_2020()` has two additional year selector arguments. `adi_year` determines which year of ADI data you would like to access. The function can output data for 2020 or 2021. `coi_year` determines which year of COI data you would like to access. The function can output data for any year from 2012 to 2021.
+
+::: {.callout-warning}
+The download can stop if you have poor internet connection. Otherwise it should take roughly 20-30 seconds.
+:::
+
+```{r}
+data_2020 <- geo_2020(data = x, download = TRUE, adi_year = 2021, coi_year = 2021)
+
+data_2010 <- geo_2010(data = x, download = TRUE)
+```
+
+## Data Output
+
+`geo_2020()` outputs thirteen variables along with the original address data. It outputs eight index variables: COI, COI housing subscore, COI education subscore, COI socioeconomic subscore, ADI state, ADI national, SVI on the tract level, and SVI on the block group level. It also outputs five geographic variables: longitude, latitude, tract number, tract FIPS code, and block group FIPS code.
+
+```{r, echo = FALSE}
+data_2020 <- data_2020%>%
+  mutate(across(.cols = all_of(c("svi_block", "coi", "coi_he", "coi_se", "coi_ed", "lon", "lat")), .fns = ~round(.x, digits = 4)))
+```
+
+```{r}
+datatable(data_2020)
+```
+
+`geo_2010()` outputs five variables and the address data. It outputs COI and SDI. It also outputs tract FIPS code, longitude, and latitude.
+
+```{r, echo = FALSE}
+data_2010 <- data_2010%>%
+  mutate(across(.cols = all_of(c("coi", "lon", "lat", "sdi")), .fns = ~round(.x, digits = 4)))
+```
+
+```{r}
+datatable(data_2010)
+```
+

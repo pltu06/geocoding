@@ -27,3 +27,13 @@ geo_2020(data = x, download = FALSE)
 geo_merge_function()
 
 geo_2020(data = x, adi_year = 2021, download = FALSE)
+
+
+library(censusxy)
+
+data <- stl_homicides
+
+homicide_sf <- cxy_geocode(data, street = "street_address", city = "city", state = "state", 
+                             output = "simple", class = "sf")
+
+> mapview::mapview(homicide_sf)

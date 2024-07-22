@@ -69,11 +69,11 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
     mutate(geoid = as.numeric(geoid20))
   
   } else {
-    svi_data_bg <- read_csv("Data/svi_bg_2020.csv")%>%
+    svi_data_bg <- read_csv("/Users/patricktu/Desktop/patrick/Geo/Data/svi_bg_2020.csv")%>%
     select(svi_block = THEMES, GEOID)%>%
     mutate(FIPS = as.numeric(GEOID))
     
-    svi_data <- read_csv("Data/svi_2022.csv")%>%
+    svi_data <- read_csv("/Users/patricktu/Desktop/patrick/Geo/Data/svi_2022.csv")%>%
       select(LOCATION, svi_tract = RPL_THEMES, FIPS)%>%
       separate(
         LOCATION, 
@@ -88,12 +88,12 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
     
     missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
     
-    adi_data <- read_csv(paste0("Data/adi_il_", adi_year, ".csv"))%>%
+    adi_data <- read_csv(paste0("/Users/patricktu/Desktop/patrick/Geo/Data/adi_il_", adi_year, ".csv"))%>%
       select(-GISJOIN)%>%
       mutate(across(.cols = starts_with("ADI"), 
                     .fns = ~if_else(.x%in%missing_data, NA, .x)))
     
-    coi_data <- read_csv(file = paste0("Data/coi_", coi_year, ".csv"))%>%
+    coi_data <- read_csv(file = paste0("/Users/patricktu/Desktop/patrick/Geo/Data/coi_", coi_year, ".csv"))%>%
       select(geoid20, z_COI_nat, z_ED_nat, z_HE_nat, z_SE_nat)%>%
       mutate(geoid = as.numeric(geoid20))
   }
@@ -101,7 +101,7 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
   census_tracts <- cxy_geocode(data, street = "street", city = "city", 
                                state = "state", zip = "zip",
                                return = "geographies", 
-                               vintage = "Current_Current", 
+                               vintage = "Current_Current",
                                class = "dataframe", output = "full")%>%
     mutate(state = formatC(cxy_state_id, width = 2, flag = "0"), 
            county = formatC(cxy_county_id, width = 3, flag = "0"), 
