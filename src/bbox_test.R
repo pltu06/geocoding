@@ -9,11 +9,9 @@ library(osmdata)
 library(sf)
 library(greenR)
 
-api_key <- "2b3886ed84d448af363b976fcea159633656da16"
+source("./src/align_columns.R")
 
-census_api_key(key = api_key)
-
-options(tigris_use_cache = TRUE)
+source("./src/api_key.R")
 
 cook_bg_geom <- get_acs(
   geography = "block group",

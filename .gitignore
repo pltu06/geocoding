@@ -61,3 +61,6 @@ Data/coi_data.csv
 /.quarto/
 /geo_site_files/
 geo_site.html
+
+# API Key
+src/api_key.R
