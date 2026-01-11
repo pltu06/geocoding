@@ -55,7 +55,8 @@ rsconnect/
 *.DS_Store
 
 # COI Data
-Data/coi_data.csv
+Data/coi_data_sub.csv
+Data/coi_data_dom.csv
 
 # GitHub Pages
 /.quarto/
