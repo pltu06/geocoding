@@ -58,7 +58,8 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
   adi_data <- read_csv(url(adi_url))%>%
     select(-GISJOIN)%>%
     mutate(across(.cols = starts_with("ADI"), 
-                  .fns = ~if_else(.x%in%missing_data, NA, .x)))
+                  .fns = ~if_else(.x%in%missing_data, NA, .x))) %>%
+    mutate(FIPS = as.character(FIPS))
   
   coi_url_sub <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/coi_", coi_year, "_sub.csv")
   
