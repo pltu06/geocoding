@@ -123,7 +123,7 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
     left_join(., svi_data_bg, by = c("geoid_block" = "GEOID")) %>%
     left_join(., adi_data, by = c("geoid_block" = "FIPS")) %>%
     left_join(., coi_data, by = c("geoid_tract" = "geoid20")) %>%
-    mutate(adi_nat = as.numeric(ADI_NATRANK), adi_state = ADI_STATERNK) %>%
+    mutate(adi_nat = as.numeric(ADI_NATRANK), adi_state = as.numeric(ADI_STATERNK)) %>%
     select(street:zip, cxy_lon, cxy_lat, tract.y, geoid_block:svi_block, adi_nat, adi_state, starts_with("z_") & ends_with("_nat"))
   
   return(svi_tract)

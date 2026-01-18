@@ -22,7 +22,7 @@ geo_2010(data = x, download = FALSE)
 
 geo_2020(data = x, adi_year = 2020, download = FALSE)
 
-geo_2020(data = x, download = TRUE)
+results <- geo_2020(data = x, download = TRUE)
 
 geo_merge_function()
 
