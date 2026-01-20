@@ -4,7 +4,7 @@
 
 # This function requires tidyverse, censusxy, readr, dplyr, tidyr, sf, remotes
 
-geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2023){
+geo_2020 <- function(data = NULL, download = TRUE, coi_year = 2023){
   
   stopifnot("You forgot to enter data" = !is.null(data))
   
@@ -51,7 +51,7 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
            county_name = sub("\\s+", "", county))%>%
     select(-county,-state)
   
-  adi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_il_", adi_year, ".csv")
+  adi_url <- paste0("https://raw.githubusercontent.com/pltu06/geocoding/main/Data/adi_2023.csv")
   
   missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
   
@@ -91,7 +91,7 @@ geo_2020 <- function(data = NULL, adi_year = 2021, download = TRUE, coi_year = 2
     
     missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
     
-    adi_data <- read_csv(paste0("/Users/patricktu/Desktop/patrick/Geo/Data/adi_il_", adi_year, ".csv"))%>%
+    adi_data <- read_csv(paste0("/Users/patricktu/Desktop/patrick/Geo/Data/adi_2023.csv"))%>%
       select(-GISJOIN)%>%
       mutate(across(.cols = starts_with("ADI"), 
                     .fns = ~if_else(.x%in%missing_data, NA, .x))) %>%
