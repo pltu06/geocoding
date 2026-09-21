@@ -20,7 +20,7 @@ library(DT)
 
 ## Introduction
 
-These geocoding functions take in address data and return Area Deprivation Index, Child Opportunity Index, Social Deprivation Index, and Social Vulnerability Index values. There are two geocoding functions: one for 2020 census tract-based indices, `geo_2020()`; and one for 2010 census tract-based indices, `geo_2010()`.
+This geocoding function takes in address data and returns Area Deprivation Index, Child Opportunity Index, and Social Vulnerability Index values. The geocoding function `geo_2020()` uses 2020 US Census boundaries. The function works by utilizing the censusxy package which allows for batch geocoding through the Census geocoder without an API key.
 
 ## Dataset Rules
 
@@ -42,49 +42,31 @@ For this example we took five addresses formatted correctly and inputted them in
 
 ## Getting the Function
 
-To get `geo_2020()` and `geo_2010()` in your R environment run this code sourcing from the Github repository [pltu06/geocoding](https://github.com/pltu06/geocoding/blob/main/src/geo_2020.R).
+To get `geo_2020()` in your R environment run this code sourcing from the Github repository [pltu06/geocoding](https://github.com/pltu06/geocoding/blob/main/src/geo_2020.R).
 
 ```{r}
 source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2020.R")
-
-source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2010.R")
 ```
 
 ## Running the Function
 
-For both of the functions the `download` argument determines whether or not you need to download the index data. If you do not have the index data on your computer you should set `download = TRUE`. `geo_2020()` has two additional year selector arguments. `adi_year` determines which year of ADI data you would like to access. The function can output data for 2020 or 2021. `coi_year` determines which year of COI data you would like to access. The function can output data for any year from 2012 to 2021.
+The `download` argument determines whether or not you need to download the index data. If you do not have the index data on your computer you should set `download = TRUE`. `geo_2020()` has one year selector argument. `coi_year` determines which year of COI data you would like to access. The function can output data for any year from 2012 to 2023.
 
-::: {.callout-warning}
+::: callout-warning
 The download can stop if you have poor internet connection. Otherwise it should take roughly 20-30 seconds.
 :::
 
 ```{r}
-data_2020 <- geo_2020(data = x, download = TRUE, adi_year = 2021, coi_year = 2021)
-
-data_2010 <- geo_2010(data = x, download = TRUE)
+data_2020 <- geo_2020(data = x, download = TRUE, coi_year = 2023)
 ```
 
 ## Data Output
 
-`geo_2020()` outputs thirteen variables along with the original address data. It outputs eight index variables: COI, COI housing subscore, COI education subscore, COI socioeconomic subscore, ADI state, ADI national, SVI on the tract level, and SVI on the block group level. It also outputs five geographic variables: longitude, latitude, tract number, tract FIPS code, and block group FIPS code.
+`geo_2020()` outputs thirteen variables along with the original address data. It outputs twenty-two index variables: COI national, COI domains national (of which there are three), COI subdomains national (of which there are fourteen), ADI state, ADI national, SVI on the tract level, and SVI on the block group level. The COI values are z-scored, the SVI values are percent rank, and the ADI values are percentiles. It also outputs five geographic variables: longitude, latitude, tract number, tract FIPS code, and block group FIPS code.
 
 ```{r, echo = FALSE}
 data_2020 <- data_2020%>%
-  mutate(across(.cols = all_of(c("svi_block", "coi", "coi_he", "coi_se", "coi_ed", "lon", "lat")), .fns = ~round(.x, digits = 4)))
-```
+  mutate(across(.cols = all_of(c("svi_block", "z_COI_nat", "z_ED_nat", "z_HE_nat", "z_SE_nat", "z_ED_EC_nat", "z_ED_EL_nat", "z_ED_ER_nat", "z_ED_SP_nat", "z_HE_EP_nat", "z_HE_HR_nat", "z_HE_SE_nat", "z_HE_HE_nat", "z_SE_EI_nat", "z_SE_EO_nat", "z_SE_ER_nat", "z_SE_HQ_nat", "z_SE_SR_nat", "z_SE_WL_nat")), .fns = ~round(.x, digits = 4)))
 
-```{r}
 datatable(data_2020)
 ```
-
-`geo_2010()` outputs five variables and the address data. It outputs COI and SDI. It also outputs tract FIPS code, longitude, and latitude.
-
-```{r, echo = FALSE}
-data_2010 <- data_2010%>%
-  mutate(across(.cols = all_of(c("coi", "lon", "lat", "sdi")), .fns = ~round(.x, digits = 4)))
-```
-
-```{r}
-datatable(data_2010)
-```
-
