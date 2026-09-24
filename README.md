@@ -1,5 +1,7 @@
 # geocoding
 
+Researchers should exercise diligence around geocoding private information, such as addresses. Currently, this R code utilizes the U.S. Census Bureau geocoding service. The use of third-party services such as this can risk violating privacy rules associated with HIPAA or IRB. At the present time, users should consult their institution's IRB and privacy office before use and consider local geocoding options (e.g., ArcGIS desktop or DeGAUSS) or a HIPAA-compliant service under a business associate agreement (BAA). We are, however, currently modifying the R code so addresses can be geocoded without having to access a third party API to eliminate the potential risk of violating privacy rules.
+
 Functions to aid with geocoding analyses
 
 SVI block group dataset 
