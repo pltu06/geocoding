@@ -19,3 +19,6 @@ University of Wisconsin School of Medicine and Public Health. 2020-2021 Area Dep
 SDI census tract dataset 2019
 Social deprivation index (SDI). Robert Graham Center - Policy Studies in Family Medicine & Primary Care. (2019, November 5). Retrieved Jun 06, 2024, from <https://www.graham-center.org/rgc/maps-data-tools/sdi/social-deprivation-index.html>. 
 
+HIPAA Compliance Development
+Currently developing code to address HIPAA compliance and come up with alternative ways to geocode that secures protected health information.
+<https://github.com/pltu06/geocoding/issues/4>.
