@@ -1,95 +1,73 @@
-# This function inputs addresses and outputs Social Vulnerability Index, Child Opportunity Index, 
-# and Area Deprivation Index values for each address based on their census block 
+# This function inputs addresses and outputs Social Vulnerability Index, Child Opportunity Index,
+# and Area Deprivation Index values for each address based on their census block
 # group
+#
+# PRIVACY: this function sends every address to the U.S. Census Bureau geocoder
+# (a third party with no business associate agreement). Do not use it with
+# protected health information. It only runs if you set
+# allow_external_geocoder = TRUE.
+#
+# For sensitive data, geocode locally (e.g., DeGAUSS, https://degauss.org) and
+# use geo_link() in src/geo_link.R, which never sends data off your machine.
+#
+# This function requires src/geo_link.R to be sourced first, plus censusxy:
+#   remotes::install_github("chris-prener/censusxy")
 
-# This function requires tidyverse, censusxy, readr, dplyr, tidyr, sf, remotes
+geo_2020 <- function(data = NULL, download = TRUE, coi_year = 2023, data_dir = "Data",
+                     allow_external_geocoder = FALSE){
 
-geo_2020 <- function(data = NULL, download = TRUE, coi_year = 2023, data_dir = "Data"){
-  
   stopifnot("You forgot to enter data" = !is.null(data))
-  
-  packages <- c("remotes", "readr", "dplyr", "tidyr", "sf")
-  
-  for (i in 1:length(packages)) {
-    req <- require(packages[i], character.only = TRUE)
-    
-    if (req) {
-      library(packages[i], character.only = TRUE)
-    } else {
-      install.packages(packages[i], dependencies = TRUE)
-      
-      library(packages[i], character.only = TRUE)
-    }
-  }
-  
-  test <- require("censusxy", character.only = TRUE)
-  
-  if (test) {
-    library(censusxy)
-  } else {
-    install_github("chris-prener/censusxy")
-    
-    library(censusxy)
+
+  if (!allow_external_geocoder) {
+    stop("geo_2020() sends addresses to the U.S. Census Bureau geocoder, a third-party ",
+         "service. To keep data on your machine, geocode locally (e.g., DeGAUSS, ",
+         "https://degauss.org) and use geo_link() instead. If your data are not ",
+         "sensitive and you accept sending addresses to the Census Bureau, rerun with ",
+         "allow_external_geocoder = TRUE.", call. = FALSE)
   }
 
-  # Read data from GitHub, or from a local copy of the repo's Data/ folder
-  if (download) {
-    base <- "https://raw.githubusercontent.com/pltu06/geocoding/main/Data"
-  } else {
-    base <- data_dir
+  if (!exists("geo_link", mode = "function")) {
+    stop("geo_2020() needs geo_link(). Run source(\"src/geo_link.R\") first, or ",
+         "source(\"https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_link.R\").",
+         call. = FALSE)
   }
 
-  svi_data_bg <- read_csv(file.path(base, "svi_bg_2020.csv"))%>%
-    select(svi_block = THEMES, GEOID)
-  
-  svi_data <- read_csv(file.path(base, "svi_2022.csv"))%>%
-    select(LOCATION, svi_tract = RPL_THEMES, FIPS)%>%
-    separate(
-      LOCATION, 
-      into = c("census_tract", "county", "state"), 
-      sep = ";", 
-      remove = FALSE
-    ) %>%
-    mutate(tract = as.factor(gsub("[^0-9.]", "", LOCATION)), 
-           county_name = sub("\\s+", "", county))%>%
-    select(-county,-state)
-  
-  missing_data <- c("GQ", "PH-GQ", "QDI", "PH")
-  
-  adi_data <- read_csv(file.path(base, "adi_2023.csv"))%>%
-    select(-GISJOIN)%>%
-    mutate(across(.cols = starts_with("ADI"), 
-                  .fns = ~if_else(.x%in%missing_data, NA, .x))) %>%
-    mutate(FIPS = as.character(FIPS))
-  
-  coi_data_sub <- read_csv(file.path(base, paste0("coi_", coi_year, "_sub.csv")))%>%
-    select(geoid20, coi_year = year, starts_with("z_"))
-  
-  coi_data_dom <- read_csv(file.path(base, paste0("coi_", coi_year, "_dom.csv")))%>%
-    select(geoid20, coi_year = year, starts_with("z_"))
-  
-  coi_data <- left_join(coi_data_sub, coi_data_dom, by = c("geoid20"))
-  
-  census_tracts <- cxy_geocode(data, street = "street", city = "city", 
-                               state = "state", zip = "zip",
-                               return = "geographies", 
-                               vintage = "Current_Current",
-                               class = "dataframe", output = "full")%>%
-    mutate(state_fips = formatC(cxy_state_id, width = 2, flag = "0"), 
-           county_fips = formatC(cxy_county_id, width = 3, flag = "0"), 
-           tract_fips = formatC(cxy_tract_id, width = 6, flag = "0"),
-           block_group = substr(cxy_block_id, 1, 1),
-           geoid_block = paste0(state_fips, county_fips, tract_fips, block_group),
-           geoid_tract = paste0(state_fips, county_fips, tract_fips))
-  
-  svi_tract <- left_join(census_tracts, svi_data,
-                         by = c("geoid_tract" = "FIPS")) %>%
-    left_join(., svi_data_bg, by = c("geoid_block" = "GEOID")) %>%
-    left_join(., adi_data, by = c("geoid_block" = "FIPS")) %>%
-    left_join(., coi_data, by = c("geoid_tract" = "geoid20")) %>%
-    mutate(adi_nat = as.numeric(ADI_NATRANK), adi_state = as.numeric(ADI_STATERNK)) %>%
-    select(street:zip, cxy_lon, cxy_lat, tract.y = tract, geoid_block:svi_block, adi_nat, adi_state, starts_with("z_") & ends_with("_nat"))
-  
+  if (!requireNamespace("censusxy", quietly = TRUE)) {
+    stop("geo_2020() needs censusxy: remotes::install_github(\"chris-prener/censusxy\")",
+         call. = FALSE)
+  }
+
+  message("Sending ", nrow(data), " address(es) to the U.S. Census Bureau geocoder.")
+
+  indices <- load_indices(coi_year = coi_year, download = download, data_dir = data_dir)
+
+  # vintage = "Current_Current" is kept so results match earlier versions of this
+  # function. Note: Connecticut switched from counties to planning regions in
+  # 2022, so current Connecticut GEOIDs will not match the 2020 index data.
+  census_tracts <- censusxy::cxy_geocode(data, street = "street", city = "city",
+                                         state = "state", zip = "zip",
+                                         return = "geographies",
+                                         vintage = "Current_Current",
+                                         class = "dataframe", output = "full")%>%
+    # Build the 12-digit block group GEOID: state (2) + county (3) + tract (6) +
+    # block group (the first digit of the 4-digit block number)
+    mutate(geoid_block = paste0(pad_geoid(cxy_state_id, 2),
+                                pad_geoid(cxy_county_id, 3),
+                                pad_geoid(cxy_tract_id, 6),
+                                substr(pad_geoid(cxy_block_id, 4), 1, 1)),
+           # Addresses that didn't geocode should stay NA, not "NANANA..."
+           geoid_block = if_else(is.na(cxy_block_id), NA_character_, geoid_block))
+
+  # geo_link() adds geoid_tract and all of the index columns
+  svi_tract <- geo_link(census_tracts, geoid_block = "geoid_block", indices = indices) %>%
+    # Add the descriptive tract columns the old version of this function returned
+    left_join(select(indices$svi_tract, FIPS, LOCATION, census_tract,
+                     tract.y = tract, county_name),
+              by = c("geoid_tract" = "FIPS")) %>%
+    select(street:zip, cxy_lon, cxy_lat, tract.y, geoid_block, geoid_tract,
+           LOCATION, census_tract, svi_tract, county_name, svi_block, adi_nat, adi_state,
+           starts_with("z_") & ends_with("_nat"))
+
   return(svi_tract)
-  
+
 }

@@ -2,7 +2,7 @@
 title: "How to Use Geocoding Functions"
 format: html
 editor: visual
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -20,49 +20,113 @@ library(DT)
 
 ## Introduction
 
-This geocoding function takes in address data and returns Area Deprivation Index, Child Opportunity Index, and Social Vulnerability Index values. The geocoding function `geo_2020()` uses 2020 US Census boundaries. The function works by utilizing the censusxy package which allows for batch geocoding through the Census geocoder without an API key.
+`geo_link()` takes census IDs (GEOIDs) or latitude/longitude and returns Area Deprivation Index, Child Opportunity Index, and Social Vulnerability Index values for each row, using 2020 US Census boundaries.
 
-## Dataset Rules
+`geo_link()` does not transmit your data off your machine, so it can be used within a HIPAA-compliant workflow. Addresses, coordinates, and GEOIDs stay on your computer. The only things downloaded are public: the index data from this repository and, if you give coordinates, census boundary files requested by state. Whether your workflow is HIPAA compliant depends on your institution, so check with your IRB and privacy office.
 
-Address data should be inputted with the address separated into 'street', 'city', 'state', and 'zip' columns. Make sure the column names match the names used in this dataset. Addresses should be stripped of apartment numbers if applicable and any NA values in the data set should be removed. Additionally zip codes should be entered as numbers rather than characters.
+Under HIPAA Safe Harbor, coordinates and any geography smaller than a state (county, tract, block group) are identifiers too, so don't send them to outside services either.
+
+## Step 1: Geocode Addresses Locally
+
+First turn addresses into coordinates and census IDs with a tool your institution approves. We recommend [DeGAUSS](https://degauss.org), which runs on your own computer with Docker. The Docker images are downloaded once, and addresses are never sent anywhere.
+
+::: callout-note
+Give Docker at least 8 GB of memory: the block group step needs 5 GB and stops if it doesn't have it. With Docker Desktop, set this under Settings → Resources; with [Colima](https://github.com/abiosoft/colima), start it with `colima start --memory 8`.
+:::
+
+Put the addresses in a CSV with one column named `address` (for example, `401 S 2nd St Springfield IL 62701`). Leave out apartment numbers and use 5-digit zip codes. Then run, in the folder with the file:
+
+```{sh, eval = FALSE}
+# Geocode addresses (adds lat and lon)
+docker run --rm -v "$PWD":/tmp ghcr.io/degauss-org/geocoder:3.4.1 addresses.csv
+
+# Add 2020 census block group and tract IDs
+docker run --rm -v "$PWD":/tmp ghcr.io/degauss-org/census_block_group:1.1.1 \
+  addresses_geocoder_3.4.1_score_threshold_0.5.csv 2020
+```
+
+The second command creates `addresses_geocoder_3.4.1_score_threshold_0.5_census_block_group_1.1.1_2020.csv` with the columns `census_block_group_id_2020` and `census_tract_id_2020`. Check [degauss.org](https://degauss.org) for the current versions.
+
+Other options also work: ArcGIS desktop, your institution's own geocoder, or a geocoding service that has signed a business associate agreement (BAA) with your institution (e.g., Geocodio's HIPAA option). Anything that gives you latitude and longitude can be used in Step 2.
+
+## Step 2: Get the Function
+
+Install the packages once, then source `geo_link()` from the GitHub repository [pltu06/geocoding](https://github.com/pltu06/geocoding/blob/main/src/geo_link.R).
+
+```{r, eval = FALSE}
+install.packages(c("dplyr", "readr", "stringr", "tidyr", "sf", "tigris"))
+```
+
+```{r, eval = FALSE}
+source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_link.R")
+```
+
+```{r, include = FALSE}
+# When this page is built, use the repo's own copy of the code so the page
+# always matches the commit being published (the GitHub URL above can lag
+# behind a push for a few minutes).
+source("src/geo_link.R")
+```
+
+## Step 3: Link the Indices
+
+With DeGAUSS output, point `geo_link()` at the block group ID column:
+
+```{r, eval = FALSE}
+d <- readr::read_csv("addresses_geocoder_3.4.1_score_threshold_0.5_census_block_group_1.1.1_2020.csv")
+
+data_2020 <- geo_link(d, geoid_block = "census_block_group_id_2020")
+```
+
+Here is the same thing for ten public places: the state capitol buildings of Alabama, Arizona, California, Colorado, Connecticut, Georgia, Illinois, Oregon, Pennsylvania, and Texas. Their block group IDs are typed in below.
 
 ```{r}
 library(tibble)
 
-x <- tibble(street = c("1501 Washington Ave", "875 N Michigan Ave", 
-                       "1901 W Madison St", "8327 N Galena Rd", "951 Chicago Ave"), 
-            city = c("Cairo", "Chicago", "Chicago", "Peoria", "Oak Park"),
-            state = c("IL", "IL", "IL", "IL", "IL"),
-            zip = c(62914, 60611, 60612, 61615, 60302))
+ids <- tibble(capitol = c("AL", "AZ", "CA", "CO", "CT", "GA", "IL", "OR", "PA", "TX"),
+              census_block_group_id_2020 = c("011010002001", "040131143011", "060670011033",
+                                             "080310027041", "090035021002", "131210035001",
+                                             "171670013002", "410470002003", "420430201001",
+                                             "484530007001"))
 
-datatable(x)
+# Load the index data once and reuse it (it is about 200 MB)
+indices <- load_indices(coi_year = 2023, download = TRUE)
+
+data_2020 <- geo_link(ids, geoid_block = "census_block_group_id_2020", indices = indices)
 ```
 
-For this example we took five addresses formatted correctly and inputted them into the function.
-
-## Getting the Function
-
-To get `geo_2020()` in your R environment run this code sourcing from the Github repository [pltu06/geocoding](https://github.com/pltu06/geocoding/blob/main/src/geo_2020.R).
-
-```{r}
-source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2020.R")
-```
-
-## Running the Function
-
-The `download` argument determines whether or not you need to download the index data. If you do not have the index data on your computer you should set `download = TRUE`. `geo_2020()` has one year selector argument. `coi_year` determines which year of COI data you would like to access. The function can output data for any year from 2012 to 2023.
+The `download` argument says whether to read the index data from GitHub (`TRUE`) or from a local copy of the repository's `Data/` folder (`download = FALSE, data_dir = "path/to/Data"`). `coi_year` chooses the year of COI data, from 2012 to 2023.
 
 ::: callout-warning
 The download can stop if you have poor internet connection. Otherwise it should take roughly 20-30 seconds.
 :::
 
+### Other inputs
+
+- **Tract IDs only:** `geo_link(d, geoid_tract = "census_tract_id_2020")`. Block group indices (SVI block group and ADI) will be NA.
+- **Latitude and longitude:** `geo_link(d, lat = "lat", lon = "lon", states = "IL")`. Block groups are found on your computer. Only the state code is sent, to download that state's boundary file. If you leave out `states`, they are worked out locally.
+- **No internet:** save the boundaries once with `sf::st_write(tigris::block_groups("IL", year = 2020), "il_bg_2020.gpkg")`, then use `geo_link(d, lat = "lat", lon = "lon", bg_shapes = "il_bg_2020.gpkg", download = FALSE, data_dir = "Data")`.
+
+GEOIDs must use **2020** census boundaries. If a spreadsheet dropped the leading zero (states 01–09), `geo_link()` adds it back. Connecticut GEOIDs that use the 2022 planning regions (instead of counties) are converted to the 2020 county codes automatically.
+
 ```{r}
-data_2020 <- geo_2020(data = x, download = TRUE, coi_year = 2023)
+coords <- tibble(capitol = ids$capitol,
+                 lat = c(32.377614, 33.448175, 38.576771, 39.739997, 41.762864,
+                         33.749798, 39.798338, 44.939050, 40.263320, 30.276442),
+                 lon = c(-86.301883, -112.098251, -121.494921, -104.984403, -72.682254,
+                         -84.388565, -89.653456, -123.030567, -76.884362, -97.739754))
+
+# states is left out, so the states are worked out on your computer
+data_xy <- geo_link(coords, lat = "lat", lon = "lon", indices = indices)
+
+all.equal(data_xy$geoid_block, data_2020$geoid_block)
 ```
 
 ## Data Output
 
-`geo_2020()` outputs thirteen variables along with the original address data. It outputs twenty-two index variables: COI national, COI domains national (of which there are three), COI subdomains national (of which there are fourteen), ADI state, ADI national, SVI on the tract level, and SVI on the block group level. The COI values are z-scored, the SVI values are percent rank, and the ADI values are percentiles. It also outputs five geographic variables: longitude, latitude, tract number, tract FIPS code, and block group FIPS code.
+`geo_link()` keeps your columns and adds two geographic variables (`geoid_block` and `geoid_tract`) and twenty-two index variables: COI national, COI domains national (of which there are three), COI subdomains national (of which there are fourteen), ADI state, ADI national, SVI on the tract level, and SVI on the block group level. The COI values are z-scored, the SVI values are percent rank, and the ADI values are percentiles.
+
+Set `drop_identifiers = TRUE` to remove address, coordinate, county, and GEOID columns before you share or save the results. Check your other columns (names, dates, record numbers) yourself.
 
 ```{r, echo = FALSE}
 data_2020 <- data_2020%>%
@@ -70,3 +134,37 @@ data_2020 <- data_2020%>%
 
 datatable(data_2020)
 ```
+
+## Optional: Census Bureau Geocoder (Non-Sensitive Data Only)
+
+`geo_2020()` geocodes addresses with the U.S. Census Bureau geocoder through the censusxy package. **This sends every address to the Census Bureau**, a third party with no business associate agreement, so never use it with protected health information. It only runs if you set `allow_external_geocoder = TRUE`.
+
+Addresses go in separate `street`, `city`, `state`, and `zip` columns, without apartment numbers or NA values. Store zip codes as text so leading zeros (e.g., `06106`) are kept.
+
+```{r}
+x <- tibble(street = c("600 Dexter Ave", "1700 W Washington St", "1315 10th St",
+                       "200 E Colfax Ave", "210 Capitol Ave", "206 Washington St SW",
+                       "401 S 2nd St", "900 Court St NE", "501 N 3rd St", "1100 Congress Ave"),
+            city = c("Montgomery", "Phoenix", "Sacramento", "Denver", "Hartford",
+                     "Atlanta", "Springfield", "Salem", "Harrisburg", "Austin"),
+            state = c("AL", "AZ", "CA", "CO", "CT", "GA", "IL", "OR", "PA", "TX"),
+            zip = c("36130", "85007", "95814", "80203", "06106",
+                    "30334", "62701", "97301", "17120", "78701"))
+
+datatable(x)
+```
+
+```{r, eval = FALSE}
+source("https://raw.githubusercontent.com/pltu06/geocoding/main/src/geo_2020.R")
+```
+
+```{r, include = FALSE}
+source("src/geo_2020.R")  # repo copy, as above
+```
+
+```{r}
+data_census <- geo_2020(data = x, download = TRUE, coi_year = 2023,
+                        allow_external_geocoder = TRUE)
+```
+
+`geo_2020()` returns the address columns, longitude, latitude, tract number and name, county, the tract and block group FIPS codes, and the same index variables as `geo_link()`.
