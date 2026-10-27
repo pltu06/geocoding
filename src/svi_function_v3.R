@@ -3,7 +3,17 @@
 
 # This function requires tidyverse, censusxy, readr
 
-svi_xy_function <- function(data = x){
+# DEPRECATED: use geo_link() in src/geo_link.R instead.
+# PRIVACY: this function sends every address to the U.S. Census Bureau geocoder,
+# a third party. It only runs if you set allow_external_geocoder = TRUE.
+
+svi_xy_function <- function(data = x, allow_external_geocoder = FALSE){
+
+  if (!allow_external_geocoder) {
+    stop("svi_xy_function() is deprecated and sends addresses to the U.S. Census Bureau ",
+         "geocoder. Use geo_link() in src/geo_link.R instead, or set ",
+         "allow_external_geocoder = TRUE for non-sensitive data.", call. = FALSE)
+  }
   
   library(censusxy)
   library(tidyverse)
