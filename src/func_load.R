@@ -1,6 +1,9 @@
 # Checking to see Downloaded Packages
 # Patrick Tu
 # 4.21.24
+#
+# Note: newer code (src/geo_link.R) does not install packages for you; it
+# tells you which ones to install. Please don't copy this pattern into functions.
 
 packages <- c("remotes", "readr", "dplyr", "tidyr")
 
