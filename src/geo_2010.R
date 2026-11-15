@@ -4,7 +4,9 @@
 # Give it ONE of:
 #   - geoid_tract: the name of a column with 11-digit 2010 tract GEOIDs
 #   - lat + lon:   names of coordinate columns; tracts are found locally with
-#                  assign_geoids(year = 2010) from src/geo_link.R
+#                  assign_geoids(year = 2010) from src/geo_link.R. `states` and
+#                  `bg_shapes` (2010 block group boundaries) are passed to
+#                  assign_geoids(); use bg_shapes to stay fully offline.
 #   - addresses (street, city, state, zip columns) with allow_external_geocoder = TRUE.
 #     PRIVACY: this sends every address to the U.S. Census Bureau geocoder, a
 #     third party. Do not use it with protected health information.
@@ -17,7 +19,7 @@
 # warning) and only `sdi` is filled in.
 
 geo_2010 <- function(data = NULL, geoid_tract = NULL, lat = NULL, lon = NULL,
-                     download = TRUE, data_dir = "Data", allow_external_geocoder = FALSE){
+                     states = NULL, bg_shapes = NULL, download = TRUE, data_dir = "Data", allow_external_geocoder = FALSE){
 
   stopifnot("You forgot to enter data" = !is.null(data))
 
@@ -63,7 +65,8 @@ geo_2010 <- function(data = NULL, geoid_tract = NULL, lat = NULL, lon = NULL,
   if (!is.null(geoid_tract)) {
     geoid <- pad_geoid(data[[geoid_tract]], 11)
   } else if (!is.null(lat) && !is.null(lon)) {
-    geoid <- assign_geoids(data, lat = lat, lon = lon, year = 2010)$geoid_tract
+    geoid <- assign_geoids(data, lat = lat, lon = lon, states = states,
+                           bg_shapes = bg_shapes, year = 2010)$geoid_tract
   } else {
     if (!requireNamespace("censusxy", quietly = TRUE)) {
       stop("Geocoding addresses needs censusxy: ",
