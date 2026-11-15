@@ -215,7 +215,17 @@ assign_geoids <- function(data, lat = "lat", lon = "lon", states = NULL,
       st <- tigris::states(cb = TRUE, year = year, progress_bar = FALSE)
       st_hits <- sf::st_join(sf::st_transform(pts, sf::st_crs(st)), st,
                              join = sf::st_within)
-      states <- sort(unique(stats::na.omit(st_hits$STUSPS)))
+      # 2020 outlines have state abbreviations (STUSPS); 2010 outlines only
+      # have FIPS codes (STATE). tigris::block_groups() accepts either.
+      state_col <- intersect(c("STUSPS", "STATE"), names(st_hits))[1]
+      if (is.na(state_col)) {
+        stop("The ", year, " state boundaries have no STUSPS or STATE column. ",
+             "Give `states` or a local file with `bg_shapes`.")
+      }
+      states <- sort(unique(stats::na.omit(st_hits[[state_col]])))
+      if (length(states) == 0) {
+        stop("None of the points fell inside a U.S. state (lat/lon swapped?).")
+      }
       message("Downloading ", year, " block groups for: ",
               paste(states, collapse = ", "))
     }
@@ -225,8 +235,11 @@ assign_geoids <- function(data, lat = "lat", lon = "lon", states = NULL,
   }
 
   # TIGER files name the ID column GEOID, GEOID20, or GEOID10 depending on year
+  # (intersect() returns NULL if bg is NULL, so check the length too)
   geoid_col <- intersect(c("GEOID", "GEOID20", "GEOID10"), names(bg))[1]
-  if (is.na(geoid_col)) stop("Block group boundaries need a GEOID column.")
+  if (length(geoid_col) == 0 || is.na(geoid_col)) {
+    stop("Block group boundaries need a GEOID column.")
+  }
   bg <- bg[, geoid_col]
 
   # Point-in-polygon. st_within finds the block group each point falls inside.

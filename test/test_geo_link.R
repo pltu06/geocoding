@@ -3,7 +3,8 @@
 #
 # Index data are read from the local Data/ folder (download = FALSE), so the
 # only network use is the lat/lon tests downloading block group boundaries
-# with tigris for the ten example states (only the state codes are sent).
+# with tigris for the ten example states, plus 2010 Illinois boundaries for
+# geo_2010() (only the state codes are sent).
 #
 # All locations are the public state capitols in test/example_data.R.
 # A few extra census IDs (no addresses) test leading zeros and Connecticut.
@@ -12,6 +13,7 @@ library(testthat)
 
 source("src/geo_link.R")
 source("src/geo_2020.R")
+source("src/geo_2010.R")
 source("test/example_data.R")
 
 indices <- load_indices(coi_year = 2023, download = FALSE, data_dir = "Data")
@@ -155,6 +157,31 @@ test_that("drop_identifiers = TRUE removes address, coordinate, and GEOID column
   expect_false(any(c("lat", "lon", "street", "city", "zip", "county_name",
                      "geoid_block", "geoid_tract") %in% names(out)))
   expect_true(all(c("id", "state", "svi_tract", "adi_nat", "z_COI_nat") %in% names(out)))
+})
+
+test_that("geo_2010() finds 2010 tracts from lat/lon", {
+  # 2010 state outlines have FIPS codes (STATE) but no STUSPS column, so the
+  # states have to be worked out from STATE. 17167001300 is the 2010 tract the
+  # Census geocoder (vintage Census2010_Current) gives for the Illinois capitol.
+  il <- filter(places, state == "IL")
+  expect_message(
+    out <- suppressWarnings(geo_2010(il, lat = "lat", lon = "lon", download = FALSE)),
+    "2010 block groups for: 17"
+  )
+  expect_equal(out$geoid, "17167001300")
+  expect_false(is.na(out$sdi))
+
+  out_states <- suppressWarnings(geo_2010(il, lat = "lat", lon = "lon", states = "IL",
+                                          download = FALSE))
+  expect_equal(out_states$geoid, "17167001300")
+})
+
+test_that("assign_geoids() errors clearly when no point is in a U.S. state", {
+  expect_error(assign_geoids(tibble(lat = 0, lon = 0)), "inside a U.S. state")
+})
+
+test_that("geo_2010() refuses to call the Census geocoder without opt-in", {
+  expect_error(geo_2010(example_addresses), "allow_external_geocoder = TRUE")
 })
 
 test_that("geo_2020() refuses to call the Census geocoder without opt-in", {
